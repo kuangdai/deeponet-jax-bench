@@ -149,11 +149,11 @@ Our measurements on a V100 GPU is reported as follows:
 | Baseline   | 2907         | 39           |                |
 
 
-Now we compare the results to the original `deepxde` solutions with the other backends 
+Now we can compare these results to the original `deepxde` solutions with the other backends 
 (`torch`, `tf` and `paddle`), which can be found at [DeepXDE-ZCS](https://github.com/stfc-sciml/DeepXDE-ZCS). 
 Clearly, this `jax` baseline has surpassed those with the other backends, meaning that
-it is at least a decent solution with `jax`.
-However, note that the time measurements in `deepxde` at [DeepXDE-ZCS](https://github.com/stfc-sciml/DeepXDE-ZCS) include data sampling.
+it is at least a reasonable baseline with `jax`.
+However, note that the time measurements in [DeepXDE-ZCS](https://github.com/stfc-sciml/DeepXDE-ZCS) do include data sampling.
 
 # 5. ZCS
 
@@ -164,7 +164,7 @@ XLA_PYTHON_CLIENT_PREALLOCATE=false CUDA_VISIBLE_DEVICES=0 python xtrain_zcs.py 
 ```
 
 The measurements are reported below. Similar to the other backends, these measurements show an outstanding 
-reduction of GPU memory consumption and wall time.
+reduction of GPU memory and wall time.
 
 | **METHOD** | **GPU / MB** | **TIME / s** | $M=50, N=4000$ |
 |------------|--------------|--------------|----------------|
