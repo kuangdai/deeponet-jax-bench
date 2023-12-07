@@ -157,34 +157,47 @@ However, note that the time measurements in [DeepXDE-ZCS](https://github.com/stf
 
 # 5. Contributed solutions
 
-So far we have received two solutions. Kuangdai Leng provided a solution using ZCS, 
-and Shunyuan Mao a solution with `jax.jvp()`.
+So far we have received three solutions. 
+Kuangdai Leng contributed two solutions using ZCS, respectively based on `jax.grad()` (reverse-mode AD)
+and `jax.jvp()` (forward-mode AD), and Shunyuan Mao contributed a solution only using `jax.jvp()`.
 
-ZCS:
+
+`ZCS-GRAD` (by KL):
 ```bash
 XLA_PYTHON_CLIENT_PREALLOCATE=false CUDA_VISIBLE_DEVICES=0 python xtrain_zcs.py -M 50 -N 4000 
 ```
 
-JVP:
+`ZCS-JVP` (by KL):
+```bash
+XLA_PYTHON_CLIENT_PREALLOCATE=false CUDA_VISIBLE_DEVICES=0 python xtrain_zcs_jvp.py -M 50 -N 4000 
+```
+
+`PURE-JVP` (by SM):
 ```bash
 XLA_PYTHON_CLIENT_PREALLOCATE=false CUDA_VISIBLE_DEVICES=0 python xtrain_jvp.py -M 50 -N 4000 
 ```
 
 
-The measurements are reported below. These measurements show an outstanding 
+The measurements on a Nvidia V100 are reported below. These measurements show an outstanding 
 reduction of GPU memory and wall time by ZCS and JVP, with ZCS being twice faster.
 
-| **METHOD** | **GPU / MB** | **TIME / s** | $M=50, N=4000$ |
-|------------|--------------|--------------|----------------|
-| Baseline   | 2907         | 39           |                |
-| ZCS        | 603          | 5.3          |                |
-| JVP        | 645          | 10.7         |                |
+| **METHOD**    | **GPU / MB** | **TIME / s** | $M=50, N=4000$ |
+|---------------|--------------|--------------|----------------|
+| Baseline (KL) | 2907         | 39           |                |
+| ZCS-GRAD (KL) | 603          | 5.3          |                |
+| ZCS-JVP (KL)  | 603          | 4.8          |                |
+| PURE-JVP (SM) | 603          | 10.7         |                |
 
 Further, we can increase the problem scale by using `-M 100 -N 8000`, and the measurements are reported below:
 
-| **METHOD** | **GPU / MB** | **TIME / s** | $M=100, N=8000$ |
-|------------|--------------|--------------|-----------------|
-| Baseline   | 10851        | 147          |                 |
-| ZCS        | 867          | 7.2          |                 |
-| JVP        | 873          | 13.0         |                 |
+| **METHOD**    | **GPU / MB** | **TIME / s** | $M=100, N=8000$ |
+|---------------|--------------|--------------|-----------------|
+| Baseline (KL) | 10851        | 147          |                 |
+| ZCS-GRAD (KL) | 867          | 7.2          |                 |
+| ZCS-JVP (KL)  | 867          | 6.5          |                 |
+| PURE-JVP (SM) | 867          | 12.8         |                 |
+
+
+**NOTE**: nested `jvp` is currently unsupported by the other backends (`torch`, `tf` and `paddle`). 
+Therefore, `ZCS-JVP` and `PURE-JVP` cannot be extended to these backends at this moment.
 
