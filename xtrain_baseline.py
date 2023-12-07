@@ -18,17 +18,7 @@ from src.utils import mse_to_zeros, batched_l2_relative_error, DiffRecData
 
 
 def compute_u_pde(forward_fn, branch_input, trunk_input, source_input):
-    """ diffusion-reaction equation with VMAP over function dimension
-
-    Args:
-        forward_fn: forward function
-        branch_input: shape (n_functions, n_branch_points)
-        trunk_input: shape (n_coordinates, n_dim)
-        source_input: source input
-        branch_tangent: tangent of branch_input, shape (n_branch_points,)
-        trunk_tangent: tangent of trunk_input, shape (n_dim,)
-
-    """
+    """ diffusion-reaction equation with VMAP over function dimension """
     branch_tangent = jnp.zeros(branch_input.shape)
     trunk_tangent_x = jnp.array([1., 0.])
     trunk_tangent_t = jnp.array([0., 1.])
