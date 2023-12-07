@@ -21,7 +21,7 @@ def compute_u_pde(forward_zcs_fn, z_x, z_t, source_input):
     # constants
     d, k = 0.01, 0.01
 
-    # forward
+    # grad functions with jvp
     def get_u_and_u_t(z_x_, z_t_):
         return jax.jvp(forward_zcs_fn, (z_x_, z_t_), (0., 1.))
 
@@ -31,7 +31,7 @@ def compute_u_pde(forward_zcs_fn, z_x, z_t, source_input):
     def get_u_xx(z_x_, z_t_):
         return jax.jvp(get_u_x, (z_x_, z_t_), (1., 0.))[1]
 
-    # forward
+    # u and pde
     u, u_t = get_u_and_u_t(z_x, z_t)
     u_xx = get_u_xx(z_x, z_t)
     pde = u_t - d * u_xx + k * u ** 2 - source_input
