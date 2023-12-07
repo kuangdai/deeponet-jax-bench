@@ -155,29 +155,35 @@ Clearly, this `jax` baseline has surpassed those with the other backends, meanin
 it is at least a reasonable baseline with `jax`.
 However, note that the time measurements in [DeepXDE-ZCS](https://github.com/stfc-sciml/DeepXDE-ZCS) do include data sampling.
 
-# 5. ZCS
+# 5. Competing solutions
 
-Our ZCS solution can be run via
+Kuangdai Leng provides a solution with ZCS, and Shunyuan Mao a solution with `jax.jvp()`.
 
+ZCS:
 ```bash
 XLA_PYTHON_CLIENT_PREALLOCATE=false CUDA_VISIBLE_DEVICES=0 python xtrain_zcs.py -M 50 -N 4000 
 ```
 
-The measurements are reported below. Similar to the other backends, these measurements show an outstanding 
-reduction of GPU memory and wall time.
+JVP:
+```bash
+XLA_PYTHON_CLIENT_PREALLOCATE=false CUDA_VISIBLE_DEVICES=0 python xtrain_jvp.py -M 50 -N 4000 
+```
+
+
+The measurements are reported below. These measurements show an outstanding 
+reduction of GPU memory and wall time by ZCS and JVP, 
 
 | **METHOD** | **GPU / MB** | **TIME / s** | $M=50, N=4000$ |
 |------------|--------------|--------------|----------------|
 | Baseline   | 2907         | 39           |                |
-| ZCS        | 603          | 5            |                |
+| ZCS        | 603          | 5.3          |                |
+| JVP        | 645          | 10.7         |                |
 
 Further, we can increase the problem scale by using `-M 100 -N 8000`, and the measurements are reported below:
 
 | **METHOD** | **GPU / MB** | **TIME / s** | $M=100, N=8000$ |
 |------------|--------------|--------------|-----------------|
 | Baseline   | 10851        | 147          |                 |
-| ZCS        | 867          | 8            |                 |
-
-Clearly, ZCS has offered bigger relative savings as the problem scale becomes larger. 
-
+| ZCS        | 867          | 7.2          |                 |
+| JVP        | 873          | 13.0         |                 |
 
