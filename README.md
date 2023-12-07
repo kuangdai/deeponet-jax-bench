@@ -10,7 +10,7 @@ This repo contains the following five sections:
 
 4. [Baseline](#4-baseline): one baseline implementation in pure `jax + flax` by Kuangdai;
 
-5. [ZCS](#5-zcs): our ZCS implementation in pure `jax + flax` by Kuangdai.
+5. [Contributed solutions](#5-contributed-solutions): contributed solutions.
 
 # 1. Installation
 
@@ -155,9 +155,10 @@ Clearly, this `jax` baseline has surpassed those with the other backends, meanin
 it is at least a reasonable baseline with `jax`.
 However, note that the time measurements in [DeepXDE-ZCS](https://github.com/stfc-sciml/DeepXDE-ZCS) do include data sampling.
 
-# 5. Competing solutions
+# 5. Contributed solutions
 
-Kuangdai Leng provides a solution with ZCS, and Shunyuan Mao a solution with `jax.jvp()`.
+So far we have received two solutions. Kuangdai Leng provided a solution using ZCS, 
+and Shunyuan Mao a solution with `jax.jvp()`.
 
 ZCS:
 ```bash
@@ -171,7 +172,7 @@ XLA_PYTHON_CLIENT_PREALLOCATE=false CUDA_VISIBLE_DEVICES=0 python xtrain_jvp.py 
 
 
 The measurements are reported below. These measurements show an outstanding 
-reduction of GPU memory and wall time by ZCS and JVP, 
+reduction of GPU memory and wall time by ZCS and JVP, with ZCS being twice faster.
 
 | **METHOD** | **GPU / MB** | **TIME / s** | $M=50, N=4000$ |
 |------------|--------------|--------------|----------------|
