@@ -41,7 +41,7 @@ def compute_u_pde(forward_fn, branch_input, trunk_input, source_input):
     # forward
     u, u_t = get_u_and_u_t(branch_input, trunk_input)
     u_xx = get_u_xx(branch_input, trunk_input)
-    pde = u_t - d * u_xx + k * u ** 2 - source_input[:, :, None]
+    pde = u_t - d * u_xx + k * u ** 2 - source_input
     return u, pde
 
 
@@ -93,8 +93,7 @@ def run():
 
     # train state
     model = DeepONet(branch_features=(data.n_features, 128, 128, 128),
-                     trunk_features=(data.n_dims, 128, 128, 128),
-                     cartesian_prod=True)
+                     trunk_features=(data.n_dims, 128, 128, 128))
     branch_in, trunk_in, _, _ = data.sample_batch(N_FUNCTIONS, N_POINTS_PDE)
     params = model.init(jax.random.PRNGKey(0), branch_in, trunk_in)['params']
     optimizer = optax.adam(learning_rate=0.0005)
