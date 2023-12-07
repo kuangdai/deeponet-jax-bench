@@ -12,7 +12,7 @@ import optax
 from flax.training import train_state
 from tqdm import trange
 
-from src.model import DeepONetCartesianProd
+from src.model import DeepONet
 from src.utils import mse_to_zeros, batched_l2_relative_error, DiffRecData
 
 
@@ -94,8 +94,9 @@ def run():
     N_POINTS_PDE = args.n_points  # noqa
 
     # train state
-    model = DeepONetCartesianProd(branch_features=(data.n_features, 128, 128, 128),
-                                  trunk_features=(data.n_dims, 128, 128, 128))
+    model = DeepONet(branch_features=(data.n_features, 128, 128, 128),
+                     trunk_features=(data.n_dims, 128, 128, 128),
+                     cartesian_prod=True)
     branch_in, trunk_in, _, _ = data.sample_batch(N_FUNCTIONS, N_POINTS_PDE)
     params = model.init(jax.random.PRNGKey(0), branch_in, trunk_in)['params']
     optimizer = optax.adam(learning_rate=0.0005)

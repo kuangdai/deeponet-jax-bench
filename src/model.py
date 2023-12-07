@@ -23,9 +23,10 @@ class FNN(nn.Module):
         return x
 
 
-class DeepONetCartesianProd(nn.Module):
+class DeepONet(nn.Module):
     branch_features: tuple
     trunk_features: tuple
+    cartesian_prod: bool = True
 
     def setup(self):
         # noinspection PyAttributeOutsideInit
@@ -35,10 +36,18 @@ class DeepONetCartesianProd(nn.Module):
             self.param('bias', nn.initializers.zeros, ())
         )
 
-    def __call__(self, branch_in, trunk_in):
+    def __call__(self, branch_in, trunk_in, out_channels=1):
+        # forward of branch and trunk
         branch_out = self.branch(branch_in)
-        # only trunk output is activated before einsum
-        trunk_out = nn.tanh(self.trunk(trunk_in))
-        out = jnp.einsum("bi,ni->bn", branch_out, trunk_out)
+        trunk_out = nn.tanh(self.trunk(trunk_in))  # only trunk output is activated before einsum
+        # reshape for output channels
+        branch_out_channels = branch_out.reshape([branch_out.shape[0], out_channels, -1])
+        trunk_out_channels = trunk_out.reshape([trunk_out.shape[0], out_channels, -1])
+        # this IF should NOT affect efficiency because self.cartesian_prod is constant during training
+        if self.cartesian_prod:
+            out = jnp.einsum("bci,nci->bnc", branch_out_channels, trunk_out_channels)
+        else:
+            out = jnp.einsum("Nci,Nci->Nc", branch_out_channels, trunk_out_channels)
         out += self.bias
-        return out
+        # if out_channels is 1, squeeze this dimension
+        return out.squeeze()
