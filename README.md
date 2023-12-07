@@ -158,8 +158,8 @@ However, note that the time measurements in [DeepXDE-ZCS](https://github.com/stf
 # 5. Contributed solutions
 
 So far we have received three solutions. 
-Kuangdai Leng contributed two solutions using ZCS, respectively based on `jax.grad()` (reverse-mode AD)
-and `jax.jvp()` (forward-mode AD), and Shunyuan Mao contributed a solution only using `jax.jvp()`.
+Kuangdai Leng (KL) contributed two solutions using ZCS, respectively based on `jax.grad()`
+and `jax.jvp()`, and Shunyuan Mao (SM) contributed a solution only using `jax.jvp()`.
 
 
 `ZCS-GRAD` (by KL):
@@ -178,7 +178,7 @@ XLA_PYTHON_CLIENT_PREALLOCATE=false CUDA_VISIBLE_DEVICES=0 python xtrain_jvp.py 
 ```
 
 
-The measurements on a Nvidia V100 are reported below. These measurements show an outstanding 
+The measurements on an Nvidia V100 are reported below. These measurements show an outstanding 
 reduction of GPU memory and wall time by ZCS and JVP, with ZCS being twice faster.
 
 | **METHOD**    | **GPU / MB** | **TIME / s** | $M=50, N=4000$ |
@@ -187,6 +187,7 @@ reduction of GPU memory and wall time by ZCS and JVP, with ZCS being twice faste
 | ZCS-GRAD (KL) | 603          | 5.3          |                |
 | ZCS-JVP (KL)  | 603          | 4.8          |                |
 | PURE-JVP (SM) | 603          | 10.7         |                |
+
 
 Further, we can increase the problem scale by using `-M 100 -N 8000`, and the measurements are reported below:
 
