@@ -29,7 +29,7 @@ def compute_u_pde(forward_zcs_fn, z_x, z_t, source_input):
         return jax.jvp(forward_zcs_fn, (z_x_, z_t_), (1., 0.))[1]
 
     def get_u_xx(z_x_, z_t_):
-        return jax.jvp(get_u_x, (z_x_, z_t_), (z_x_, z_t_))[1]
+        return jax.jvp(get_u_x, (z_x_, z_t_), (1., 0.))[1]
 
     # forward
     u, u_t = get_u_and_u_t(z_x, z_t)
