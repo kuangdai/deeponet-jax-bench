@@ -39,6 +39,9 @@ class DeepONetCartesianProd(nn.Module):
         branch_out = self.branch(branch_in)
         # only trunk output is activated before einsum
         trunk_out = nn.tanh(self.trunk(trunk_in))
-        out = jnp.einsum("bi,ni->bn", branch_out, trunk_out)
+        if branch_out.ndim == 2 and trunk_out.ndim == 2:
+            out = jnp.einsum("bi,ni->bn", branch_out, trunk_out)
+        else:
+            out = jnp.sum(branch_out * trunk_out, axis=-1)
         out += self.bias
         return out

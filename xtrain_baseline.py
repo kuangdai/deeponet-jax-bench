@@ -3,6 +3,7 @@ Training with my best knowledge of JAX
 """
 
 import argparse
+import functools
 from functools import partial
 from time import time
 
@@ -16,37 +17,44 @@ from src.model import DeepONetCartesianProd
 from src.utils import mse_to_zeros, batched_l2_relative_error, DiffRecData
 
 
-def get_jac_hes_fn(fwd_fn):
-    """ value, Jacobian and Hessian functions """
-    # here we implement Jacobian and Hessian using root summation over points,
-    # which has the same behaviour as pytorch.autograd.grad(),
-    # tensorflow.GradientTape.gradient() and paddle.grad()
-    jac_fn = jax.grad(lambda p_, x_: fwd_fn(p_, x_).sum(), argnums=1)
-    hes_fn = jax.grad(lambda p_, x_: jac_fn(p_, x_).sum(), argnums=1)
-    return jac_fn, hes_fn
-
-
 def compute_u_pde(forward_fn, branch_input, trunk_input, source_input):
-    """ diffusion-reaction equation with VMAP over function dimension """
+    """ diffusion-reaction equation with VMAP over function dimension
+
+    Args:
+        forward_fn: forward function
+        branch_input: shape (n_functions, n_branch_points)
+        trunk_input: shape (n_coordinates, n_dim)
+        source_input: source input
+        branch_tangent: tangent of branch_input, shape (n_branch_points,)
+        trunk_tangent: tangent of trunk_input, shape (n_dim,)
+
+    """
+    branch_tangent = jnp.zeros(branch_input.shape)
+    trunk_tangent_x = jnp.array([1., 0.])
+    trunk_tangent_t = jnp.array([0., 1.])
+
+
+    @functools.partial(jax.vmap, in_axes=(None, 0), out_axes=1)
+    def get_u_and_u_t(branch_input_, trunk_input_):
+        """ get u and u_t """
+        return jax.jvp(forward_fn, (branch_input_, trunk_input_), (branch_tangent, trunk_tangent_t))
+
+    def get_u_x(branch_input_, trunk_input_):
+        return jax.jvp(forward_fn, (branch_input_, trunk_input_), (branch_tangent, trunk_tangent_x))[1]
+
+
+    @functools.partial(jax.vmap, in_axes=(None, 0), out_axes=1)
+    def get_u_xx(branch_input_, trunk_input_):
+        return jax.jvp(get_u_x, (branch_input_, trunk_input_), (branch_tangent, trunk_tangent_x))[1]
+
     # constants
     d, k = 0.01, 0.01
 
     # forward
-    u = forward_fn(branch_input, trunk_input)
+    u, u_t = get_u_and_u_t(branch_input, trunk_input)
+    u_xx = get_u_xx(branch_input, trunk_input)
+    pde = u_t - d * u_xx + k * u ** 2 - source_input
 
-    # grad functions
-    jac_fn, hes_fn = get_jac_hes_fn(forward_fn)
-
-    def compute_u_pde_single(branch_input_i, source_input_i, u_i):
-        """ function for a single branch_input """
-        branch_input_i = jnp.expand_dims(branch_input_i, axis=0)
-        du_i = jac_fn(branch_input_i, trunk_input)
-        ddu_i = hes_fn(branch_input_i, trunk_input)
-        pde_i = du_i[:, 1] - d * ddu_i[:, 0] + k * u_i ** 2 - source_input_i
-        return pde_i
-
-    compute_pde_vmap = jax.vmap(compute_u_pde_single, in_axes=(0, 0, 0), out_axes=0)
-    pde = compute_pde_vmap(branch_input, source_input, u)
     return u, pde
 
 
