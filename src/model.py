@@ -42,6 +42,9 @@ class DeepONet(nn.Module):
         trunk_out = nn.tanh(self.trunk(trunk_in))  # only trunk output is activated before einsum
         # reshape for output channels
         branch_out_channels = branch_out.reshape([branch_out.shape[0], out_channels, -1])
+        if trunk_out.ndim == 1:
+            # jvp case, only one point is sent
+            trunk_out = jnp.expand_dims(trunk_out, axis=0)
         trunk_out_channels = trunk_out.reshape([trunk_out.shape[0], out_channels, -1])
         # this IF should NOT affect efficiency because self.cartesian_prod is constant during training
         if self.cartesian_prod:
