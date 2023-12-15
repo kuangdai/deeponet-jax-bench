@@ -33,14 +33,13 @@ def compute_u_pde(forward_zcs_fn, z_x, z_t, a, source_input):
     omega_t_fn = jax.grad(omega_fn, argnums=1)
     omega_x_fn = jax.grad(omega_fn, argnums=0)
     omega_xx_fn = jax.grad(omega_x_fn, argnums=0)
+
     # u_t = d(omega_t) / da, u_xx = d(omega_xx) / da
-    u_t_fn = jax.grad(omega_t_fn, argnums=2)
-    u_xx_fn = jax.grad(omega_xx_fn, argnums=2)
+    u_t__d_u_xx_fn = jax.grad(lambda a_: omega_t_fn(z_x, z_t, a_) - d * omega_xx_fn(z_x, z_t, a_))
 
     # eval
-    u_t = u_t_fn(z_x, z_t, a)
-    u_xx = u_xx_fn(z_x, z_t, a)
-    pde = u_t - d * u_xx + k * u ** 2 - source_input
+    u_t__d_u_xx = u_t__d_u_xx_fn(a)
+    pde = u_t__d_u_xx + k * u ** 2 - source_input
     return u, pde
 
 
@@ -111,7 +110,7 @@ def run():
     a = jnp.ones_like(model.apply({'params': the_state.params},
                                   branch_in=branch_in, trunk_in=trunk_in))
     pbar = trange(args.iterations, desc='Training')
-    t_total = 0.
+    t_first, t_total = 0., 0.
     for it in pbar:
         # sample data
         branch_in, trunk_in, source_in, _ = data.sample_batch(
@@ -128,7 +127,11 @@ def run():
                              f"L_bc={bc_loss_val:.4e}, "
                              f"L_ic={ic_loss_val:.4e}, "
                              f"L={loss_val:.4e}")
-        t_total += time() - t0
+        if it == 0:
+            t_first += time() - t0
+        else:
+            t_total += time() - t0
+    print(f'Jit-compile done in {t_first:.1f} seconds')
     print(f'Training done in {t_total:.1f} seconds')
 
     ##############

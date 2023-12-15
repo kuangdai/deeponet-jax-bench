@@ -103,7 +103,7 @@ def run():
     # zcs variables
     z_x, z_t = jnp.zeros(()), jnp.zeros(())
     pbar = trange(args.iterations, desc='Training')
-    t_total = 0.
+    t_first, t_total = 0., 0.
     for it in pbar:
         # sample data
         branch_in, trunk_in, source_in, _ = data.sample_batch(
@@ -120,7 +120,11 @@ def run():
                              f"L_bc={bc_loss_val:.4e}, "
                              f"L_ic={ic_loss_val:.4e}, "
                              f"L={loss_val:.4e}")
-        t_total += time() - t0
+        if it == 0:
+            t_first += time() - t0
+        else:
+            t_total += time() - t0
+    print(f'Jit-compile done in {t_first:.1f} seconds')
     print(f'Training done in {t_total:.1f} seconds')
 
     ##############
