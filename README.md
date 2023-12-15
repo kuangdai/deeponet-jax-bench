@@ -63,7 +63,9 @@ The following files will be generated in `data/`:
 | `solutions.npy` | `float`  | `(1500, 12000)` | Solution fields of the PDE for the 1500 functions                                                             |
 
 If you do not have `deepxde`, you
-can download [the pre-generated dataset (130 MB)](https://drive.google.com/file/d/1WBT7nXl21fdKxedo-fbWbiCo7MOLDeeI/view?usp=sharing) instead.
+can
+download [the pre-generated dataset (130 MB)](https://drive.google.com/file/d/1WBT7nXl21fdKxedo-fbWbiCo7MOLDeeI/view?usp=sharing)
+instead.
 
 # 3. Training and metrics
 
@@ -97,8 +99,8 @@ The outputs contain the data in a batch:
 ### Network architecture
 
 The numbers of features for the branch and trunk nets are respectively `[50, 128, 128, 128]` and `[2, 128, 128, 128]`.
-A `flax` implementation in the format of "cartesian product" is provided in [src/model.py](src/model.py), 
-which will be used for our baseline and ZCS solutions. 
+A `flax` implementation in the format of "cartesian product" is provided in [src/model.py](src/model.py),
+which will be used for our baseline and ZCS solutions.
 You do not need to use this implementation or the format of "cartesian product";
 however, please make sure that **your network has the same amount of trainable parameters,
 and it sees the same amount of data in each iteration as defined above**.
@@ -108,7 +110,8 @@ and it sees the same amount of data in each iteration as defined above**.
 Report the following three numbers after **training for 1000 batches**:
 
 * **Peak GPU memory**: we do not provide built-in code to monitor GPU usage, as one can easily do this using tools
-  such as [nvitop](https://github.com/XuehaiPan/nvitop). Note that, by default, `jax` pre-allocates 75% of available GPU memory
+  such as [nvitop](https://github.com/XuehaiPan/nvitop). Note that, by default, `jax` pre-allocates 75% of available GPU
+  memory
   on startup, and we must disable such behaviour by `XLA_PYTHON_CLIENT_PREALLOCATE=false`.
 
 * **Total wall time**: because `jax` can run so fast, we exclude the time used on data sampling
@@ -144,61 +147,85 @@ In `deepxde`, the function dimension is handled by a handmade for-loop; here we 
 
 Our measurements on a V100 GPU is reported as follows:
 
-| **METHOD** | **GPU / MB** | **TIME / s** | $M=50, N=4000$ |
-|------------|--------------|--------------|----------------|
-| Baseline   | 2907         | 39           |                |
+| METHOD   | GPU (MB) | JIT-COMPILE TIME (s) | TRAIN TIME (s) | $M=50, N=4000$ |
+|----------|----------|----------------------|----------------|----------------|
+| Baseline | 4955     | 3.1                  | 36.1           |                |
 
-
-Now we can compare these results to the original `deepxde` solutions with the other backends 
-(`torch`, `tf` and `paddle`), which can be found at [DeepXDE-ZCS](https://github.com/stfc-sciml/DeepXDE-ZCS). 
+Now we can compare these results to the original `deepxde` solutions with the other backends
+(`torch`, `tf` and `paddle`), which can be found at [DeepXDE-ZCS](https://github.com/stfc-sciml/DeepXDE-ZCS).
 Clearly, this `jax` baseline has surpassed those with the other backends, meaning that
 it is at least a reasonable baseline with `jax`.
-However, note that the time measurements in [DeepXDE-ZCS](https://github.com/stfc-sciml/DeepXDE-ZCS) do include data sampling.
+However, note that the time measurements in [DeepXDE-ZCS](https://github.com/stfc-sciml/DeepXDE-ZCS) do include data
+sampling.
 
 # 5. Contributed solutions
 
-So far we have received three solutions. 
+So far we have received three solutions.
 Kuangdai Leng (KL) contributed two solutions using ZCS, respectively based on `jax.grad()`
 and `jax.jvp()`, and Shunyuan Mao (SM) contributed a solution only using `jax.jvp()`.
 
-
 `ZCS-GRAD` (by KL):
+
 ```bash
 XLA_PYTHON_CLIENT_PREALLOCATE=false CUDA_VISIBLE_DEVICES=0 python xtrain_zcs.py -M 50 -N 4000 
 ```
 
 `ZCS-JVP` (by KL):
+
 ```bash
 XLA_PYTHON_CLIENT_PREALLOCATE=false CUDA_VISIBLE_DEVICES=0 python xtrain_zcs_jvp.py -M 50 -N 4000 
 ```
 
 `PURE-JVP` (by SM):
+
 ```bash
 XLA_PYTHON_CLIENT_PREALLOCATE=false CUDA_VISIBLE_DEVICES=0 python xtrain_jvp.py -M 50 -N 4000 
 ```
 
+The measurements on an Nvidia V100 are reported below (5 runs average). These measurements show an outstanding
+reduction of GPU memory and wall time by ZCS and JVP.
 
-The measurements on an Nvidia V100 are reported below. These measurements show an outstanding 
-reduction of GPU memory and wall time by ZCS and JVP, with ZCS being twice faster.
+| METHOD        | GPU (MB) | JIT-COMPILE TIME (s) | TRAIN TIME (s) |
+|---------------|----------|----------------------|----------------|
+| Baseline (KL) | 4955     | 3.1                  | 36.1           | 
+| ZCS-GRAD (KL) | 603      | 3.5                  | 3.6            | 
+| ZCS-JVP (KL)  | 603      | 1.4                  | 3.5            | 
+| PURE-JVP (SM) | 605      | 6.6                  | 3.9            |
 
-| **METHOD**    | **GPU / MB** | **TIME / s** | $M=50, N=4000$ |
-|---------------|--------------|--------------|----------------|
-| Baseline (KL) | 2907         | 39           |                |
-| ZCS-GRAD (KL) | 603          | 5.3          |                |
-| ZCS-JVP (KL)  | 603          | 4.8          |                |
-| PURE-JVP (SM) | 603          | 10.7         |                |
+### 5.1 Increasing number of functions and points
 
+We increase the problem scale by using `-M 100 -N 8000`, and the measurements are reported below (5 runs average):
 
-Further, we can increase the problem scale by using `-M 100 -N 8000`, and the measurements are reported below:
+| METHOD        | GPU (MB) | JIT-COMPILE TIME (s) | TRAIN TIME (s) |
+|---------------|----------|----------------------|----------------|
+| Baseline (KL) | 10851    | 5.4                  | 142.1          | 
+| ZCS-GRAD (KL) | 867      | 3.7                  | 5.1            | 
+| ZCS-JVP (KL)  | 867      | 1.5                  | 5.0            | 
+| PURE-JVP (SM) | 867      | 6.8                  | 5.5            |
 
-| **METHOD**    | **GPU / MB** | **TIME / s** | $M=100, N=8000$ |
-|---------------|--------------|--------------|-----------------|
-| Baseline (KL) | 10851        | 147          |                 |
-| ZCS-GRAD (KL) | 867          | 7.2          |                 |
-| ZCS-JVP (KL)  | 867          | 6.5          |                 |
-| PURE-JVP (SM) | 867          | 12.8         |                 |
+### 5.2 Increasing the maximum differential order
 
+Next we change the target PDE from
 
-**NOTE**: nested `jvp` is currently unsupported by the other backends (`torch`, `tf` and `paddle`). 
+$$
+u_t - d u_{xx} + k u ^ 2 - f=0
+$$
+
+to
+
+$$
+u_t - d u_{xxxx} + k u ^ 2 - f=0
+$$
+
+Namely, we change the order of the spatial diffusion term from 2 to 4.
+The scripts are marked by the prefix `_order4_`.
+The new measurements on the same device are reported below (5 runs average, $M=50, N=4000$):
+
+| METHOD        | GPU (MB) | JIT-COMPILE TIME (s) | TRAIN TIME (s) |
+|---------------|----------|----------------------|----------------|
+| ZCS-GRAD (KL) | 1115     | 5.4                  | 6.4            | 
+| ZCS-JVP (KL)  | 885      | 2.5                  | 6.1            | 
+| PURE-JVP (SM) | 885      | 18.6                 | 7.6            |
+
+**NOTE**: nested `jvp` is currently unsupported by the other backends (`torch`, `tf` and `paddle`).
 Therefore, `ZCS-JVP` and `PURE-JVP` cannot be extended to these backends at this moment.
-
